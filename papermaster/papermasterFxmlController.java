@@ -3,12 +3,15 @@ package connection.papermaster;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.ResourceBundle;
-
 import connection.dbconnection;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
@@ -22,7 +25,7 @@ public class papermasterFxmlController {
     private URL location;
 
     @FXML
-    private ComboBox<String> txtNameCombo;
+    private ComboBox <String> txtNameCombo;
 
     @FXML
     private TextField txtPrice;
@@ -40,25 +43,70 @@ public class papermasterFxmlController {
     private Button btnRemove;
 
     @FXML
-    void doAddNew(ActionEvent event) {
-    	try {
+    void doAddNew(ActionEvent event)
+    {
+    	try 
+    	{
 			pstmt=dbcon.prepareStatement("insert into papermaster values(?,?)");
 			pstmt.setString(1,PaperTitle);
 			pstmt.setFloat(2,Float.parseFloat(txtPrice.getText()));
-			pstmt.executeUpdate();
-		} catch (SQLException e) {
+			int status=pstmt.executeUpdate();
+			if(status!=0) 
+			{
+				  Alert alert=new Alert(AlertType.INFORMATION); 
+			      alert.setTitle("Success");
+				  alert.setContentText("Newspaper Added Successfully"); 
+				  alert.show();	 
+			}
+			else
+			{
+				  Alert alert=new Alert(AlertType.ERROR); 
+			      alert.setTitle("Aw Snap !");
+				  alert.setContentText("Something Went Wrong"); 
+				  alert.show();	 
+				
+			}
+		} 
+    	catch (SQLException e) 
+    	{
+			e.printStackTrace();
+		}
+    }
+    
+    @FXML
+    void doRemove(ActionEvent event) 
+    {
+    	try 
+    	{
+			pstmt=dbcon.prepareStatement("delete from papermaster where title=?");
+			pstmt.setString(1,PaperTitle);
+			int status=pstmt.executeUpdate();
+			if(status!=0) 
+			{
+				  Alert alert=new Alert(AlertType.INFORMATION); 
+			      alert.setTitle("Success");
+				  alert.setContentText("Deleted Succesfully"); 
+				  alert.show();	  
+			}
+			else
+			{
+				  Alert alert=new Alert(AlertType.ERROR); 
+			      alert.setTitle("Something Went Wrong");
+				  alert.setContentText("Not Deleted"); 
+				  alert.show();
+				
+			}
+		} 
+    	catch (SQLException e) 
+    	{
 			e.printStackTrace();
 		}
 
     }
 
     @FXML
-    void doRemove(ActionEvent event) {
-
-    }
-
-    @FXML
-    void doSave(ActionEvent event) {
+    void doSave(ActionEvent event) 
+    {
     	
 
     }
@@ -69,32 +117,91 @@ public class papermasterFxmlController {
     void doSelectComboValue(ActionEvent event) {
     	PaperTitle=txtNameCombo.getSelectionModel().getSelectedItem();
     	
-		 /*
-		 * Alert alert=new Alert(AlertType.ERROR); alert.setTitle("Title");
-		 * alert.setContentText(PaperTitle); alert.show();
-		 */
-
-
+    	try {
+			pstmt=dbcon.prepareStatement("select * from papermaster where title=?");
+			pstmt.setString(1,PaperTitle);
+			
+			ResultSet table=pstmt.executeQuery();
+			   if(table.next())
+			    {
+				  float price=table.getFloat("price");
+				  txtPrice.setText(String.valueOf(price));
+			    }
+			   else
+			     {
+				      Alert alert=new Alert(AlertType.CONFIRMATION); 
+				      alert.setTitle("New Paper Addition Detected");
+					  alert.setContentText("Adding a New Newspaper , Please Set the Price Accordingly"); 
+					  alert.show(); 
+			     }
+		    } 
+    	catch (SQLException e)
+    	{	
+			e.printStackTrace();
+		}
+		 
     }
 
     @FXML
-    void doUpdate(ActionEvent event) {
+    void doUpdate(ActionEvent event) 
+    {
+    	try 
+    	{
+			pstmt=dbcon.prepareStatement("update papermaster set title=? , price=? where title=? ");
+			pstmt.setString(1,PaperTitle);
+			pstmt.setFloat(2,Float.parseFloat(txtPrice.getText()));
+			pstmt.setString(3,PaperTitle);
+			int status=pstmt.executeUpdate();
+			if(status!=0) 
+			{
+				  Alert alert=new Alert(AlertType.INFORMATION); 
+			      alert.setTitle("Success");
+				  alert.setContentText("Updated Succesfully"); 
+				  alert.show();	  
+			}
+			else
+			{
+				  Alert alert=new Alert(AlertType.ERROR); 
+			      alert.setTitle("Something Went Wrong");
+				  alert.setContentText("Updation Not Possible , Check Details"); 
+				  alert.show();
+				
+			}
+			
+			
+		} 
+    	catch (SQLException e) 
+    	{
+			e.printStackTrace();
+		}
+		
 
     }
 
     
     Connection dbcon;
     PreparedStatement pstmt;
+    ArrayList <String> lst=new ArrayList<String>() ;
     @FXML
     void initialize() {
     	
     	dbcon=dbconnection.getConnection();
-        assert txtNameCombo != null : "fx:id=\"txtNameCombo\" was not injected: check your FXML file 'papermasterFxml.fxml'.";
-        assert txtPrice != null : "fx:id=\"txtPrice\" was not injected: check your FXML file 'papermasterFxml.fxml'.";
-        assert btnAdd != null : "fx:id=\"btnAdd\" was not injected: check your FXML file 'papermasterFxml.fxml'.";
-        assert btnsave != null : "fx:id=\"btnsave\" was not injected: check your FXML file 'papermasterFxml.fxml'.";
-        assert btnUpdate != null : "fx:id=\"btnUpdate\" was not injected: check your FXML file 'papermasterFxml.fxml'.";
-        assert btnRemove != null : "fx:id=\"btnRemove\" was not injected: check your FXML file 'papermasterFxml.fxml'.";
+        
+        try {
+			pstmt=dbcon.prepareStatement("select * from papermaster");
+			ResultSet table= pstmt.executeQuery();
+			
+			while(table.next())
+			{
+				String title =table.getString("title");
+				lst.add(title);
+			}
+		  } 
+        catch (SQLException e) {
+			e.printStackTrace();
+		}
+         
+        txtNameCombo.getItems().addAll(lst);
 
     }
 }
